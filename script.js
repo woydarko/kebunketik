@@ -70,7 +70,7 @@ function spawnPest() {
     word: word,
     typed: "",
     position: 100,
-    speed: 0.2 + Math.random() * 0.2,
+    speed: (0.2 + Math.random() * 0.2) * (1 + (currentStage - 1) * 0.3),
     typedSpan: typedSpan,
     untypedSpan: untypedSpan
   };
@@ -130,17 +130,6 @@ function handleKeyPress(event) {
           }, 200);
 
           if (pest.hp <= 0) {
-  score += 100;
-  showPopup(pest.element, "+100", "score");
-  pest.element.remove();
-  activePests.splice(i, 1);
-
-  document.getElementById("boss-hp-container").style.display = "none";
-
-  // Boss defeated = menang!
-  showEndScreen("Selamat! Kamu Menang!");
-}
-            if (pest.hp <= 0) {
               score += 100;
               showPopup(pest.element, "+100", "score");
               pest.element.remove();
@@ -150,8 +139,7 @@ function handleKeyPress(event) {
 
               // Boss defeated = menang!
               showEndScreen("Selamat! Kamu Menang!");
-            }
-            else {
+            } else {
             // Ganti kata boss berikutnya
             pest.currentWordIndex++;
             if (pest.currentWordIndex >= pest.bossWords.length) {
