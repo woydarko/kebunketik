@@ -78,7 +78,11 @@ function spawnPest() {
 }
 
 function updatePests(deltaTime) {
-  activePests.forEach((pest, i) => {
+  // Fix #23: Stop loop if hp <= 0 to prevent negative values
+  if (hp <= 0) return;
+  
+  for (let i = activePests.length - 1; i >= 0; i--) {
+    const pest = activePests[i];
     pest.position -= pest.speed * deltaTime;
     pest.element.style.left = pest.position + "vw";
 
@@ -88,8 +92,10 @@ function updatePests(deltaTime) {
       pest.element.remove();
       activePests.splice(i, 1);
       updateHP();
+      // Fix #23: Check immediately after damage to prevent multiple hits
+      if (hp <= 0) break;
     }
-  });
+  }
 }
 
 function updateHP() {
@@ -196,6 +202,36 @@ function showPopup(targetElement, text, type) {
 }
 
 document.addEventListener("keydown", handleKeyPress);
+
+// Fix #15: Pause game when tab loses focus
+let gamePaused = false;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    gamePaused = true;
+    // Pause all game timers
+    clearInterval(pestInterval);
+    // Pause BGM
+    const bgm1 = document.getElementById("bgm-stage1");
+    const bgm2 = document.getElementById("bgm-stage2");
+    const bgm3 = document.getElementById("bgm-stage3");
+    bgm1.pause(); bgm2.pause(); bgm3.pause();
+  } else {
+    if (gameStarted && gamePaused) {
+      gamePaused = false;
+      // Resume game loop
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+      // Resume pest spawning based on stage
+      if (currentStage === 1) {
+        pestInterval = setInterval(spawnPest, 3000);
+      } else if (currentStage === 2) {
+        pestInterval = setInterval(spawnPest, 2000);
+      }
+      // Resume BGM
+      playBGM(currentStage);
+    }
+  }
+});
 
 function gameLoop(currentTime) {
   const deltaTime = currentTime - lastTime;
@@ -447,10 +483,16 @@ function toggleMute() {
 }
 
 function showEndScreen(message) {
+  // Fix #17: Save score to localStorage before showing end screen
+  const highScore = localStorage.getItem('kebunketik_highScore') || 0;
+  if (score > highScore) {
+    localStorage.setItem('kebunketik_highScore', score);
+  }
+  
   document.getElementById("game-container").style.display = "none";
   document.getElementById("end-screen").style.display = "flex";
   document.getElementById("end-message").innerText = message;
-  document.getElementById("final-score").innerText = "Skor: " + score;
+  document.getElementById("final-score").innerText = "Skor: " + score + " | High Score: " + Math.max(score, highScore);
 
   // Hentikan BGM
   const bgm1 = document.getElementById("bgm-stage1");
